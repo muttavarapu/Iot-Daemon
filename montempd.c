@@ -35,7 +35,7 @@ static void  _signal_handler(const int signal) {
 int main(void){
 
   openlog(DAEMON_NAME,LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON);
-  syslog(LOG_INFO,"Stattimg time daemon");
+  syslog(LOG_INFO,"Stattimg temp monitor daemon");
 
   pid_t pid =fork();
   if(pid <0){

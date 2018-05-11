@@ -110,12 +110,12 @@ void start_temp_monitor(){
     readCurrentTemp();
     syncWithServer();
     double setPoint = getSetPoint();//based on time of the day and server settings
-    if (currentTemp > setPoint) {
-      syslog(LOG_INFO,"%lf: Too hot!. Turning off the heater\n", currentTemp);
+    if (currentTemp > (setPoint+2)) {
+      syslog(LOG_INFO,"temp:%lf,set:%lf Turn off heater\n", currentTemp,setPoint);
       heaterOff();
     }
-    if (currentTemp < setPoint) {
-      syslog(LOG_INFO,"%lf: Too Cold!. Turning ON the heater\n", currentTemp);
+    if (currentTemp < (setPoint-2)) {
+      syslog(LOG_INFO,"temp:%lf,set:%lf Turn On heater\n", currentTemp,setPoint);
       heaterOn();
     }
     sleep(1);

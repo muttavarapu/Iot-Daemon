@@ -5,7 +5,7 @@
 #include <syslog.h>
 #define MAXBUF 1024
 #define DELIM "="
-#define FILENAME "config.conf"
+#define FILENAME "/qemu/.config.conf"
 
 struct config get_config()
 {

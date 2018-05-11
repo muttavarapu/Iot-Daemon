@@ -24,7 +24,7 @@ static int writer(char *data, size_t size, size_t nmemb, char *buffer_in) {
 int updateStatus(double temperature, char status[]){
   char url[255];
   sprintf(url, "%s:%d/status",app_conf.server_addr, app_conf.port);
-  char * inData = buildStatusJSON(250,"Off");
+  char * inData = buildStatusJSON(temperature,status);
   CURL *curl;
   struct curl_slist *slist = NULL;
   curl_global_init(CURL_GLOBAL_ALL);
@@ -69,7 +69,7 @@ int updateStatus(double temperature, char status[]){
 }
 
 int doUpdate(double temperature, char status[]) {
-  int ret = updateStatus(250, "Off");
+  int ret = updateStatus(temperature, status);
   if(ret!=0 && strcmp(response,"OK") !=0)
   {
     syslog(LOG_ERR,"Failed%s\n",response );
