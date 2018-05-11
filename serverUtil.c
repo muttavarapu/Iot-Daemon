@@ -4,6 +4,7 @@
 #include <curl/curl.h>
 #include "serverUtil.h"
 #include "parseConfig.h"
+#include <syslog.h>
 
 char response[512];
 extern struct config app_conf;
@@ -21,11 +22,8 @@ static int writer(char *data, size_t size, size_t nmemb, char *buffer_in) {
 }
 
 int updateStatus(double temperature, char status[]){
-  printf("Status Config ADDRESS %s\n",app_conf.server_addr);
-
   char url[255];
   sprintf(url, "%s:%d/status",app_conf.server_addr, app_conf.port);
-  printf("Updated URL %s\n",url );
   char * inData = buildStatusJSON(250,"Off");
   CURL *curl;
   struct curl_slist *slist = NULL;
@@ -52,16 +50,18 @@ int updateStatus(double temperature, char status[]){
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writer);
     res = curl_easy_perform(curl);
     if (res != CURLE_OK) {
-      printf("Curl error!\n");
+    syslog(LOG_ERR,"Curl error!\n");
       fprintf(stderr, "curl_easy_perform() failed: %s\n",
       curl_easy_strerror(res));
       ret_code = 1;
-    }
-    long http_code = 0;
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
-    if(http_code != 200)
-        ret_code =-1;
-    //printf("%ld %s\n", http_code, response);
+    }else{
+
+    	long http_code = 0;
+    	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+    	if(http_code != 200)
+	        ret_code =-1;
+	    //printf("%ld %s\n", http_code, response);
+	}
     curl_easy_cleanup(curl);
     curl_slist_free_all(slist);
   }
@@ -70,21 +70,19 @@ int updateStatus(double temperature, char status[]){
 
 int doUpdate(double temperature, char status[]) {
   int ret = updateStatus(250, "Off");
-  if(ret==0 && strcmp(response,"OK") ==0)
+  if(ret!=0 && strcmp(response,"OK") !=0)
   {
-    printf("Sucess\n" );
-  }else{
-    printf("Failed%s\n",response );
+    syslog(LOG_ERR,"Failed%s\n",response );
+    return -1;
   }
   return 0;
 }
 int doGetSetpoints(){
-  printf("setpoints Config ADDRESS %s\n",app_conf.server_addr);
 
   CURL *curl;
   char setpointURL[255];
   sprintf(setpointURL, "%s:%d/setpointlist",app_conf.server_addr, app_conf.port);
-  printf("URL   :%s\n",setpointURL );
+
   //struct curl_slist *slist = NULL;
   curl_global_init(CURL_GLOBAL_ALL);
   curl = curl_easy_init();
@@ -102,15 +100,16 @@ int doGetSetpoints(){
     // curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, func_callback);
     res = curl_easy_perform(curl);
     if (res != CURLE_OK) {
-      printf("Curl error!\n");
+      syslog(LOG_ERR,"Curl error!\n");
       fprintf(stderr, "curl_easy_perform() failed: %s\n",
               curl_easy_strerror(res));
       ret_code = 1;
-    }
+    }else{
     long http_code = 0;
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
     if(http_code != 200)
         ret_code =-1;
+}
     curl_easy_cleanup(curl);
     //curl_slist_free_all(slist);
   }
@@ -121,10 +120,9 @@ char * fetchSetpoints(){
     int ret =doGetSetpoints();
     if(ret==0)
     {
-      printf("Sucess%s\n",response);
       return response;
     }else{
-      printf("Failed%s\n",response );
+      syslog(LOG_ERR,"Failed%s\n",response );
     }
     return "FAIL";
 }

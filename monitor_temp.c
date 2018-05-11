@@ -1,10 +1,13 @@
-#include "serverUtil.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <syslog.h>
+
 #include "parseConfig.h"
+#include "serverUtil.h"
+#include "monitor_temp.h"
 
 #define BUFF_SIZE 50
 int secondsAgo = -1; // used to calculate update time
@@ -35,7 +38,7 @@ char *getHeaterStatus() {
 void readCurrentTemp() {
   FILE *fptr = fopen(app_conf.temperature_file, "r");
   if (fptr == NULL) {
-    printf("Cannot open file \n");
+    syslog(LOG_ERR,"Cannot open temperature file");
     exit(0);
   }
   fscanf(fptr, "%lf", &currentTemp);
@@ -66,7 +69,7 @@ void syncWithServer() {
     if (ret == 0) {
       secondsAgo = 0;
     } else {
-      printf("Server updated Failed!");
+      syslog(LOG_ERR,"Server update failed\n");
     }
     // get setpoints
     char *setPointsStr = fetchSetpoints(); // serverUtil
@@ -90,16 +93,17 @@ void syncWithServer() {
       if (token != NULL) {
         night = atof(token);
       }
+      syslog(LOG_INFO,"Set points- Mor:%lf,Aft:%lf,Ev:%lf,Ni:%lf \n",morning,midDay,evening,night);
     } else {
       secondsAgo = app_conf.serv_sync_freq_sec + 1;
-      printf("Error getting setpoints!");
+      syslog(LOG_ERR,"Error getting setpoints from server! \n");
     }
   } else {
     secondsAgo++;
   }
 }
 
-int main() {
+void start_temp_monitor(){
   app_conf = get_config();
   int n;
   while (1) {
@@ -107,14 +111,13 @@ int main() {
     syncWithServer();
     double setPoint = getSetPoint();//based on time of the day and server settings
     if (currentTemp > setPoint) {
-      printf("%lf: Too hot!. Turning off the heater\n", currentTemp);
+      syslog(LOG_INFO,"%lf: Too hot!. Turning off the heater\n", currentTemp);
       heaterOff();
     }
     if (currentTemp < setPoint) {
-      printf("%lf: Too Coold!. Turning ON the heater\n", currentTemp);
+      syslog(LOG_INFO,"%lf: Too Cold!. Turning ON the heater\n", currentTemp);
       heaterOn();
     }
     sleep(1);
   }
-  return 0;
 }

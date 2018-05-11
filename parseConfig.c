@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
 #define MAXBUF 1024
 #define DELIM "="
 #define FILENAME "config.conf"
@@ -26,45 +27,45 @@ struct config get_config()
                                 if(token !=NULL){
                                   strcpy(conf.server_addr,token);
                                 }else{
-                                  printf("Error reading server_addr value from config \n" );
+                                  syslog(LOG_ERR,"Error reading server_addr value from config \n" );
                                 }
                               }else if(strcmp(token,"port") ==0){
                                 token = strtok(NULL,DELIM);
                                 if(token !=NULL){
                                   conf.port = atoi(token);
                                 }else{
-                                  printf("Error reading value from config \n" );
+                                  syslog(LOG_ERR,"Error reading value from config \n" );
                                 }
                               }else if(strcmp(token,"temperature_file") ==0){
                                 token = strtok(NULL,DELIM);
                                 if(token !=NULL){
                                   strcpy(conf.temperature_file,token);
                                 }else{
-                                  printf("Error reading temperature_file value from config \n" );
+                                  syslog(LOG_ERR,"Error reading temperature_file value from config \n" );
                                 }
                               }else if(strcmp(token,"status_file") ==0){
                                 token = strtok(NULL,DELIM);
                                 if(token !=NULL){
                                   strcpy(conf.status_file,token);
                                 }else{
-                                  printf("Error reading status_file value from config \n" );
+                                  syslog(LOG_ERR,"Error reading status_file value from config \n" );
                                 }
                               }else if(strcmp(token,"serv_sync_freq_sec") ==0){
                                 token = strtok(NULL,DELIM);
                                 if(token !=NULL){
                                   conf.serv_sync_freq_sec=atoi(token);
                                 }else{
-                                  printf("Error reading serv_sync_freq_sec value from config \n" );
+                                  syslog(LOG_ERR,"Error reading serv_sync_freq_sec value from config \n" );
                                 }
                               }else{
-                                printf("Invalid config value%s\n",token );
+                                syslog(LOG_ERR,"Invalid config value%s\n",token );
                               }
                           }
                 } // End while
                 fclose(file);
         } // End if file
         else{
-          printf("Failed to open file %s\n",FILENAME );
+          syslog(LOG_ERR,"Failed to open file %s\n",FILENAME );
         }
         return conf;
 }
