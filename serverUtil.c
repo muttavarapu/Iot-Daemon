@@ -8,7 +8,7 @@
 
 char response[512];
 extern struct config app_conf;
-
+static const char* pCACertFile = "/qemu/.iot-CA.pem";
 char *buildStatusJSON(double temperature, char status[]) {
   char *jsonStr = malloc(256);
   sprintf(jsonStr, "{ \"temperature\":%2.13f,\"status\":\"%s\"}", temperature,
@@ -23,7 +23,12 @@ static int writer(char *data, size_t size, size_t nmemb, char *buffer_in) {
 
 int updateStatus(double temperature, char status[]){
   char url[255];
-  sprintf(url, "%s:%d/status",app_conf.server_addr, app_conf.port);
+  if(app_conf.port)
+  {
+     sprintf(url, "%s:%d/status",app_conf.server_addr, app_conf.port);
+  }else{
+     sprintf(url, "%s/status",app_conf.server_addr);
+  }
   char * inData = buildStatusJSON(temperature,status);
   CURL *curl;
   struct curl_slist *slist = NULL;
@@ -44,7 +49,7 @@ int updateStatus(double temperature, char status[]){
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, inData);
     curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, (long)strlen(inData));
-
+    curl_easy_setopt(curl,CURLOPT_CAINFO,pCACertFile);
     char *dataPointer = NULL;
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, dataPointer);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writer);
@@ -61,7 +66,7 @@ int updateStatus(double temperature, char status[]){
     	if(http_code != 200)
 	        ret_code =-1;
 	    //printf("%ld %s\n", http_code, response);
-	}
+	   }
     curl_easy_cleanup(curl);
     curl_slist_free_all(slist);
   }
@@ -81,8 +86,12 @@ int doGetSetpoints(){
 
   CURL *curl;
   char setpointURL[255];
-  sprintf(setpointURL, "%s:%d/setpointlist",app_conf.server_addr, app_conf.port);
-
+  if(app_conf.port)
+  {
+     sprintf(setpointURL, "%s:%d/setpointlist",app_conf.server_addr, app_conf.port);
+  }else{
+     sprintf(setpointURL, "%s/setpointlist",app_conf.server_addr);
+  }
   //struct curl_slist *slist = NULL;
   curl_global_init(CURL_GLOBAL_ALL);
   curl = curl_easy_init();
@@ -97,6 +106,8 @@ int doGetSetpoints(){
     char *dataPointer = NULL;
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, dataPointer);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writer);
+    curl_easy_setopt(curl,CURLOPT_CAINFO,pCACertFile);
+
     // curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, func_callback);
     res = curl_easy_perform(curl);
     if (res != CURLE_OK) {

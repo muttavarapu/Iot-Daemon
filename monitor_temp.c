@@ -33,6 +33,11 @@ char *getHeaterStatus() {
   FILE *fptr = fopen(app_conf.status_file, "r");
   fgets(heaterStatus, BUFF_SIZE, fptr);
   fclose(fptr);
+  if(strcmp(heaterStatus,"ON")==0){
+    return "On";
+  }else{
+    return "Off";
+  }
   return heaterStatus;
 }
 void readCurrentTemp() {
